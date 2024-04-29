@@ -1,0 +1,10 @@
+version: "3.8"
+services:
+  weather-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: weather-app:latest
+    container_name: weather-app-container
+    ports:
+      - "8080:8080"
