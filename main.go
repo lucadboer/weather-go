@@ -5,12 +5,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
+	"net/url"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		panic("Error loading .env file")
+	}
+
 	e := echo.New()
 
 	e.GET("/", func(c echo.Context) error {
@@ -31,7 +37,6 @@ type WeatherResponse struct {
 	TempK float64 `json:"temp_K"`
 }
 
-
 func WeatherHandler(c echo.Context) error {
 	cep := c.Param("cep")
 
@@ -41,12 +46,16 @@ func WeatherHandler(c echo.Context) error {
 
 	cepInfo, err := fetchCEPInfo(cep)
 	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "error fetching CEP info"})
+	}
+
+	if cepInfo.Localidade == "" {
 		return c.JSON(http.StatusNotFound, map[string]string{"message": "can not find zipcode"})
 	}
 
 	weatherInfo, err := fetchWeatherInfo(cepInfo.Localidade)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"message": "error fetching weather info"})
 	}
 
 	tempC := weatherInfo.TempC
@@ -78,11 +87,11 @@ func fetchCEPInfo(cep string) (*CEP, error) {
 }
 
 func fetchWeatherInfo(cityName string) (*WeatherResponse, error) {
-	apiKey := "2f9cee46bbca477b930110109242904"
+	apiKey := os.Getenv("WEATHER_API_KEY")
 
-	cityName = strings.ReplaceAll(cityName, " ", "%")
+	cityName = url.QueryEscape(cityName)
 
-	url := fmt.Sprintf("https://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=no", apiKey, cityName)
+	url := fmt.Sprintf("https://api.weatherapi.com/v1/current.json?key=%s&q=%s&aqi=yes", apiKey, cityName)
 
 	resp, err := http.Get(url)
 
@@ -92,13 +101,17 @@ func fetchWeatherInfo(cityName string) (*WeatherResponse, error) {
 
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("city not found")
+	}
+
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
 	var apiResponse struct {
-		Current struct{
+		Current struct {
 			TempC float64 `json:"temp_c"`
 			TempF float64 `json:"temp_f"`
 		} `json:"current"`
@@ -113,5 +126,3 @@ func fetchWeatherInfo(cityName string) (*WeatherResponse, error) {
 		TempF: apiResponse.Current.TempF,
 	}, nil
 }
-
-
