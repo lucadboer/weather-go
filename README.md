@@ -24,6 +24,9 @@ Este aplicativo fornece informações sobre o clima com base no CEP fornecido. E
 4. Inicie o container com o comando `docker-compose up`.
 5. Acesse `http://localhost:8080/weather/{cep}`, substituindo `{cep}` pelo CEP desejado, para obter as informações de clima.
 
+### Testando em Produção
+Para testar em produção, você pode usar a URL fornecida: [https://temp-by-cep-zoqxxrkhyq-uc.a.run.app/weather/01153000](https://temp-by-cep-zoqxxrkhyq-uc.a.run.app/weather/01153000)
+
 ## Endpoints
 - `GET /weather/:cep` - Retorna informações de clima para o CEP fornecido.
 
