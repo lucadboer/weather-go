@@ -8,5 +8,6 @@ FROM alpine
 WORKDIR /app
 
 COPY --from=builder /app/weather .
+COPY .env .   
 
 ENTRYPOINT ["./weather"]
